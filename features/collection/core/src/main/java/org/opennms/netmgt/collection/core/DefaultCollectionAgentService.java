@@ -29,9 +29,11 @@
 package org.opennms.netmgt.collection.core;
 
 import java.net.InetAddress;
+import java.util.Objects;
 import java.util.Properties;
 
 import org.opennms.core.utils.InetAddressUtils;
+import org.opennms.netmgt.collection.api.CollectionAgent;
 import org.opennms.netmgt.collection.api.CollectionAgentService;
 import org.opennms.netmgt.dao.api.IpInterfaceDao;
 import org.opennms.netmgt.model.OnmsIpInterface;
@@ -63,7 +65,7 @@ public class DefaultCollectionAgentService implements CollectionAgentService {
      * @param ifaceId a {@link java.lang.Integer} object.
      * @param ifaceDao a {@link org.opennms.netmgt.dao.api.IpInterfaceDao} object.
      * @param transMgr a {@link org.springframework.transaction.PlatformTransactionManager} object.
-     * @return a {@link org.opennms.netmgt.collectd.CollectionAgentService} object.
+     * @return a {@link org.opennms.netmgt.collection.api.CollectionAgentService} object.
      */
     public static CollectionAgentService create(Integer ifaceId, final IpInterfaceDao ifaceDao, final PlatformTransactionManager transMgr) {
         CollectionAgentService agent = new DefaultCollectionAgentService(ifaceId, ifaceDao);
@@ -172,19 +174,8 @@ public class DefaultCollectionAgentService implements CollectionAgentService {
      */
     @Override
     public final ResourcePath getStorageResourcePath() {
-        final String foreignSource = getForeignSource();
-        final String foreignId = getForeignId();
-
-        final ResourcePath dir;
-        if(isStoreByForeignSource() && foreignSource != null && foreignId != null) {
-            dir = ResourcePath.get(ResourceTypeUtils.FOREIGN_SOURCE_DIRECTORY,
-                                   foreignSource,
-                                   foreignId);
-        } else {
-            dir = ResourcePath.get(String.valueOf(getNodeId()));
-        }
-
-        LOG.debug("getStorageDir: isStoreByForeignSource = {}, foreignSource = {}, foreignId = {}, dir = {}", isStoreByForeignSource(), foreignSource, foreignId, dir);
+        final ResourcePath dir = createStorageResourcePath(getForeignSource(), getForeignId(), getNodeId());
+        LOG.debug("getStorageDir: isStoreByForeignSource = {}, foreignSource = {}, foreignId = {}, dir = {}", isStoreByForeignSource(), getForeignSource(), getForeignId(), dir);
         return dir;
     }
 
@@ -208,4 +199,22 @@ public class DefaultCollectionAgentService implements CollectionAgentService {
         return getIpInterface().getIpAddress();
     }
 
+    protected static ResourcePath createStorageResourcePath(CollectionAgent agent) {
+        Objects.requireNonNull(agent);
+        return createStorageResourcePath(agent.getForeignSource(), agent.getForeignId(), agent.getNodeId());
+    }
+
+    private static ResourcePath createStorageResourcePath(String foreignSource, String foreignId, int nodeId) {
+        Objects.requireNonNull(foreignSource);
+        Objects.requireNonNull(foreignId);
+        final ResourcePath dir;
+        if(isStoreByForeignSource() && foreignSource != null && foreignId != null) {
+            dir = ResourcePath.get(ResourceTypeUtils.FOREIGN_SOURCE_DIRECTORY,
+                    foreignSource,
+                    foreignId);
+        } else {
+            dir = ResourcePath.get(String.valueOf(nodeId));
+        }
+        return dir;
+    }
 }
