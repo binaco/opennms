@@ -34,10 +34,10 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.security.Principal;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.DispatcherType;
@@ -57,6 +57,9 @@ import javax.servlet.http.Part;
 import org.opennms.web.api.OnmsHeaderProvider;
 
 import com.vaadin.server.VaadinRequest;
+import com.vaadin.server.VaadinServletRequest;
+import com.vaadin.server.WrappedHttpSession;
+import com.vaadin.server.WrappedSession;
 
 /**
  * This class creates an {@link HttpServletRequest} object that delegates all calls to
@@ -140,54 +143,37 @@ public class HttpServletRequestVaadinImpl implements HttpServletRequest {
         return m_request.getRemoteUser();
     }
 
-    /**
-     * @throws UnsupportedOperationException
-     */
     @Override
     public String getRequestURI() {
-        throw new UnsupportedOperationException("Unimplemented: " + this.getClass().getName() + ".getRequestURI()");
+        return getServletRequest().get().getRequestURI();
     }
 
-    /**
-     * @throws UnsupportedOperationException
-     */
     @Override
     public StringBuffer getRequestURL() {
-        throw new UnsupportedOperationException("Unimplemented: " + this.getClass().getName() + ".getRequestURL()");
+        return getServletRequest().get().getRequestURL();
     }
 
-    /**
-     * @throws UnsupportedOperationException
-     */
     @Override
     public String getRequestedSessionId() {
-        throw new UnsupportedOperationException("Unimplemented: " + this.getClass().getName() + ".getRequestedSessionId()");
+        return getServletRequest().get().getRequestedSessionId();
     }
 
-    /**
-     * @throws UnsupportedOperationException
-     */
     @Override
     public String getServletPath() {
-        throw new UnsupportedOperationException("Unimplemented: " + this.getClass().getName() + ".getServletPath()");
+        return getServletRequest().get().getServletPath();
     }
 
-    /**
-     * @throws UnsupportedOperationException
-     */
     @Override
     public HttpSession getSession() {
-        //return VaadinSession.getCurrent();
-        throw new UnsupportedOperationException("Unimplemented: " + this.getClass().getName() + ".getSession()");
+        return getHttpSession(false);
     }
 
     /**
      * @throws UnsupportedOperationException
      */
     @Override
-    public HttpSession getSession(boolean create) {
-        //return VaadinSession.getCurrent();
-        throw new UnsupportedOperationException("Unimplemented: " + this.getClass().getName() + ".getSession()");
+    public HttpSession getSession(final boolean create) {
+        return getHttpSession(create);
     }
 
     @Override
@@ -197,22 +183,22 @@ public class HttpServletRequestVaadinImpl implements HttpServletRequest {
 
     @Override
     public boolean isRequestedSessionIdFromCookie() {
-        return false;
+        return getServletRequest().get().isRequestedSessionIdFromCookie();
     }
 
     @Override
     public boolean isRequestedSessionIdFromURL() {
-        return false;
+        return getServletRequest().get().isRequestedSessionIdFromURL();
     }
 
     @Override
     public boolean isRequestedSessionIdFromUrl() {
-        return false;
+        return getServletRequest().get().isRequestedSessionIdFromUrl();
     }
 
     @Override
     public boolean isRequestedSessionIdValid() {
-        return false;
+        return getServletRequest().get().isRequestedSessionIdValid();
     }
 
     @Override
@@ -247,31 +233,22 @@ public class HttpServletRequestVaadinImpl implements HttpServletRequest {
 
     @Override
     public ServletInputStream getInputStream() throws IOException {
-        throw new IOException("Cannot get input stream from " + this.getClass().getName());
+        return getServletRequest().get().getInputStream();
     }
 
-    /**
-     * @throws UnsupportedOperationException
-     */
     @Override
     public String getLocalAddr() {
-        throw new UnsupportedOperationException("Unimplemented: " + this.getClass().getName() + ".getLocalAddr()");
+        return getServletRequest().get().getLocalAddr();
     }
 
-    /**
-     * @throws UnsupportedOperationException
-     */
     @Override
     public String getLocalName() {
-        throw new UnsupportedOperationException("Unimplemented: " + this.getClass().getName() + ".getLocalName()");
+        return getServletRequest().get().getLocalName();
     }
 
-    /**
-     * @throws UnsupportedOperationException
-     */
     @Override
     public int getLocalPort() {
-        throw new UnsupportedOperationException("Unimplemented: " + this.getClass().getName() + ".getLocalPort()");
+        return getServletRequest().get().getLocalPort();
     }
 
     @Override
@@ -296,20 +273,17 @@ public class HttpServletRequestVaadinImpl implements HttpServletRequest {
 
     @Override
     public Enumeration<String> getParameterNames() {
-        return Collections.enumeration(Collections.<String>emptyList());
+        return getServletRequest().get().getParameterNames();
     }
 
     @Override
-    public String[] getParameterValues(String name) {
-        return null;
+    public String[] getParameterValues(final String name) {
+        return getServletRequest().get().getParameterValues(name);
     }
 
-    /**
-     * @throws UnsupportedOperationException
-     */
     @Override
     public String getProtocol() {
-        throw new UnsupportedOperationException("Unimplemented: " + this.getClass().getName() + ".getProtocol()");
+        return getServletRequest().get().getProtocol();
     }
 
     @Override
@@ -317,12 +291,9 @@ public class HttpServletRequestVaadinImpl implements HttpServletRequest {
         return m_request.getReader();
     }
 
-    /**
-     * @throws UnsupportedOperationException
-     */
     @Override
-    public String getRealPath(String path) {
-        throw new UnsupportedOperationException("Unimplemented: " + this.getClass().getName() + ".getRealPath()");
+    public String getRealPath(final String path) {
+        return getServletRequest().get().getRealPath(path);
     }
 
     @Override
@@ -341,8 +312,8 @@ public class HttpServletRequestVaadinImpl implements HttpServletRequest {
     }
 
     @Override
-    public RequestDispatcher getRequestDispatcher(String path) {
-        return null;
+    public RequestDispatcher getRequestDispatcher(final String path) {
+        return getServletRequest().get().getRequestDispatcher(path);
     }
 
     @Override
@@ -376,70 +347,68 @@ public class HttpServletRequestVaadinImpl implements HttpServletRequest {
     }
 
     @Override
-    public void setCharacterEncoding(String env) throws UnsupportedEncodingException {
-        // Do nothing
+    public void setCharacterEncoding(final String env) throws UnsupportedEncodingException {
+        getServletRequest().get().setCharacterEncoding(env);
     }
 
     @Override
     public AsyncContext getAsyncContext() {
-        throw new IllegalStateException("Asynchronous operations not supported.");
+        return getServletRequest().get().getAsyncContext();
     }
 
     @Override
     public DispatcherType getDispatcherType() {
-        return DispatcherType.REQUEST;
+        return getServletRequest().get().getDispatcherType();
     }
 
     @Override
     public ServletContext getServletContext() {
-        // TODO Not sure how to implement this
-        return null;
+        return getServletRequest().get().getServletContext();
     }
 
     @Override
     public boolean isAsyncStarted() {
-        return false;
+        return getServletRequest().get().isAsyncStarted();
     }
 
     @Override
     public boolean isAsyncSupported() {
-        return false;
+        return getServletRequest().get().isAsyncSupported();
     }
 
     @Override
     public AsyncContext startAsync() throws IllegalStateException {
-        throw new IllegalStateException("Asynchronous operations not supported");
+        return getServletRequest().get().startAsync();
     }
 
     @Override
-    public AsyncContext startAsync(ServletRequest arg0, ServletResponse arg1) throws IllegalStateException {
-        throw new IllegalStateException("Asynchronous operations not supported");
+    public AsyncContext startAsync(final ServletRequest request, final ServletResponse response) throws IllegalStateException {
+        return getServletRequest().get().startAsync(request, response);
     }
 
     @Override
-    public boolean authenticate(HttpServletResponse arg0) throws IOException, ServletException {
-        // TODO: Not sure what to do here, I think return true?
-        return true;
+    public boolean authenticate(final HttpServletResponse response) throws IOException, ServletException {
+        return getServletRequest().get().authenticate(response);
     }
 
     @Override
-    public Part getPart(String arg0) throws IOException, ServletException {
-        throw new ServletException("Request is not of type multipart/form-data");
+    public Part getPart(final String arg0) throws IOException, ServletException {
+        return getServletRequest().get().getPart(arg0);
     }
 
     @Override
     public Collection<Part> getParts() throws IOException, ServletException {
-        return Collections.emptyList();
+        return getServletRequest().get().getParts();
     }
 
     @Override
-    public void login(String arg0, String arg1) throws ServletException {
-        throw new ServletException("Already logged in");
+    public void login(final String user, final String password) throws ServletException {
+        getServletRequest().get().login(user, password);
     }
 
     @Override
     public void logout() throws ServletException {
-        throw new ServletException("Cannot log out");
+        getServletRequest().get().logout();
     }
 
     @Override
@@ -449,11 +418,26 @@ public class HttpServletRequestVaadinImpl implements HttpServletRequest {
 
     @Override
     public String changeSessionId() {
-        throw new RuntimeException("Cannot change session id");
+        return getServletRequest().get().changeSessionId();
     }
 
     @Override
-    public <T extends HttpUpgradeHandler> T upgrade(Class<T> handlerClass) throws IOException, ServletException {
-        throw new RuntimeException("Cannot upgrade.");
+    public <T extends HttpUpgradeHandler> T upgrade(final Class<T> handlerClass) throws IOException, ServletException {
+        return getServletRequest().get().upgrade(handlerClass);
+    }
+
+    private Optional<VaadinServletRequest> getServletRequest() {
+        if (m_request instanceof VaadinServletRequest) {
+            return Optional.ofNullable((VaadinServletRequest)m_request);
+        }
+        return Optional.empty();
+    }
+
+    private HttpSession getHttpSession(final boolean create) {
+        final WrappedSession wrappedSession = m_request.getWrappedSession(create);
+        if (wrappedSession instanceof WrappedHttpSession) {
+            return ((WrappedHttpSession)wrappedSession).getHttpSession();
+        }
+        return null;
     }
 }
